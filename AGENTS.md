@@ -77,6 +77,11 @@ Each rule is answered Yes or No. Every answer must be Yes before you submit.
 5. When a requirement was unclear, did you stop and ask instead of guessing?
 6. Did you leave approval fields empty for a human? An agent never approves
    its own spec.
+7. Is every commit authored and committed as the main contributor,
+   `Anton Kuzmenko <anton.kuzmenko@intellias.com>`? Agents appear only as a
+   `Co-Authored-By` trailer. Set it once per clone:
+   `git config user.name "Anton Kuzmenko"` and
+   `git config user.email "anton.kuzmenko@intellias.com"`.
 
 ## Protected paths
 
