@@ -1,0 +1,11 @@
+# Python
+__pycache__/
+.venv/
+
+# Secrets: never commit a real .env (only .env.example)
+.env
+
+# LangGraph SQLite checkpoints from homework runs
+*.db
+*.db-shm
+*.db-wal
