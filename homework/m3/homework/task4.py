@@ -171,14 +171,19 @@ def say(text: str, cfg: dict) -> None:
     print(f"AI: {result['messages'][-1].text}")
 
 
-if __name__ == "__main__":
-    if "--mermaid" in sys.argv:
+def main(argv=None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    if "--mermaid" in argv:
         print(graph.get_graph().draw_mermaid())
-        sys.exit()
+        return
     cfg = {"configurable": {"thread_id": "notes"}, "recursion_limit": 40}
-    if len(sys.argv) > 1:
-        say(" ".join(sys.argv[1:]), cfg)
+    if argv:
+        say(" ".join(argv), cfg)
     else:
         print(f"Notes folder: {NOTES_DIR}  (empty line to quit)")
         while text := input("\nyou > ").strip():
             say(text, cfg)
+
+
+if __name__ == "__main__":
+    main()

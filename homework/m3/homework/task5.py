@@ -178,12 +178,17 @@ builder.add_conditional_edges("test", after_test)
 graph = builder.compile()
 
 
-if __name__ == "__main__":
-    if "--mermaid" in sys.argv:
+def main(argv=None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    if "--mermaid" in argv:
         print(graph.get_graph().draw_mermaid())
-        sys.exit()
+        return
     result = graph.invoke({"task": TASK, "candidates": [], "attempts": 0}, {"recursion_limit": 50})
     status = "passed ✅" if result.get("error") is None else "failed the tests ❌"
     how = f"winner: {result['winner']}" if result.get("winner") else "after the fallback loop"
     print(f"\nResult: code {status} ({how}), candidates: {len(result['candidates'])}, attempts: {result.get('attempts')}")
     print("─" * 60 + f"\n{result.get('code')}\n" + "─" * 60)
+
+
+if __name__ == "__main__":
+    main()

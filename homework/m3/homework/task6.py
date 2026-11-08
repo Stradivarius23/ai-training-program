@@ -279,18 +279,19 @@ def print_calls(calls: dict[str, int]) -> None:
     print(f"{'total':<12}{sum(calls.values()):>10}   (budget {BUDGET})")
 
 
-if __name__ == "__main__":
+def main(argv=None) -> None:
+    global BUDGET, STRICT
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--task", choices=sorted(TASKS), default="slugify")
     parser.add_argument("--budget", type=int, default=BUDGET)
     parser.add_argument("--strict", action="store_true", help="strict reviewer, to see the escalation")
     parser.add_argument("--mermaid", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
     BUDGET, STRICT = args.budget, args.strict
 
     if args.mermaid:
         print(graph.get_graph().draw_mermaid())
-        sys.exit()
+        return
 
     task = TASKS[args.task]
     print(f"TASK: {task}\nBUDGET: {BUDGET} LLM calls · escalation after {REVIEW_LIMIT} rejections · strict={STRICT}")
@@ -311,3 +312,7 @@ if __name__ == "__main__":
     print(f"Result: {'done ✅ (tests passed, review approved)' if done else 'stopped before done ❌'}{reason}")
     print_calls(result.get("llm_calls", {}))
     print("─" * 60 + f"\n{result.get('code', '(no code)')}\n" + "─" * 60)
+
+
+if __name__ == "__main__":
+    main()

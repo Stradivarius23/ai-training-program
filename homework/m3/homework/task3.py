@@ -80,8 +80,9 @@ def replay(graph) -> None:
     print_history(graph)
 
 
-if __name__ == "__main__":
-    mode = sys.argv[1] if len(sys.argv) > 1 else "replay"
+def main(argv=None) -> None:
+    argv = sys.argv[1:] if argv is None else argv
+    mode = argv[0] if argv else "replay"
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)
     try:
         checkpointer = SqliteSaver(conn)
@@ -91,3 +92,7 @@ if __name__ == "__main__":
         {"run": run, "replay": replay}.get(mode, lambda g: sys.exit(__doc__))(graph)
     finally:
         conn.close()
+
+
+if __name__ == "__main__":
+    main()
