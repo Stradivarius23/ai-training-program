@@ -1,0 +1,108 @@
+════════════════════════════════════════════════════════════════════════════
+OFFLINE RUN: no API key was available, so this is not a run against the
+workshop model (MODEL in .env).
+- The graph code is the real homework code, unchanged.
+- Only common.get_llm() was replaced by offline/relay_llm.py. Every LLM call
+  (prompt, tools, structured-output schema) was relayed to Claude in the coding
+  session, and Claude wrote each model answer from the real prompt.
+- Human answers at interrupt() pauses were also typed through the relay.
+- Tests, routing, reducers, checkpoints and interrupts ran for real.
+- It does not show how the workshop model itself behaves on these prompts.
+════════════════════════════════════════════════════════════════════════════
+
+
+$ python homework/task5.py
+🛠  generate_one [simplest possible]: Accumulate digits and, on each unit letter, add the number times that unit's seconds.
+🛠  generate_one [use regex]: Validate the trimmed, lowercased string with re.fullmatch on optional h, m and s groups and add up the parts.
+🛠  generate_one [parse char by char]: Walk the string once, skipping spaces, collecting digits and applying each unit letter; reject unknown characters, units without a number and a trailing number without a unit.
+
+🧪 pick_best: testing 3 candidates
+   [simplest possible] ❌ ValueError: invalid literal for int() with base 10: ''
+   def parse_duration(s: str) -> int:
+       units = {"h": 3600, "m": 60, "s": 1}
+       total, num = 0, ""
+       for ch in s:
+           if ch.isdigit():
+               num += ch
+           else:
+               total += int(num) * units[ch]
+               num = ""
+       return total
+   
+   [use regex] ❌ ValueError: invalid duration: ' 1H 30M '
+   import re
+   
+   def parse_duration(s: str) -> int:
+       m = re.fullmatch(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?", s.strip().lower())
+       if not m or not any(m.groups()):
+           raise ValueError(f"invalid duration: {s!r}")
+       h, mi, sec = (int(g or 0) for g in m.groups())
+       return h * 3600 + mi * 60 + sec
+   
+   [parse char by char] ✅ passed
+   def parse_duration(s: str) -> int:
+       units = {"h": 3600, "m": 60, "s": 1}
+       total, num, seen = 0, "", False
+       for ch in s.lower():
+           if ch.isspace():
+               continue
+           if ch.isdigit():
+               num += ch
+           elif ch in units and num:
+               total += int(num) * units[ch]
+               num, seen = "", True
+           else:
+               raise ValueError(f"invalid duration: {s!r}")
+       if num or not seen:
+           raise ValueError(f"invalid duration: {s!r}")
+       return total
+   
+🏆 winner: parse char by char
+
+Result: code passed ✅ (winner: parse char by char), candidates: 3, attempts: 1
+────────────────────────────────────────────────────────────
+def parse_duration(s: str) -> int:
+    units = {"h": 3600, "m": 60, "s": 1}
+    total, num, seen = 0, "", False
+    for ch in s.lower():
+        if ch.isspace():
+            continue
+        if ch.isdigit():
+            num += ch
+        elif ch in units and num:
+            total += int(num) * units[ch]
+            num, seen = "", True
+        else:
+            raise ValueError(f"invalid duration: {s!r}")
+    if num or not seen:
+        raise ValueError(f"invalid duration: {s!r}")
+    return total
+
+────────────────────────────────────────────────────────────
+
+$ python homework/task5.py --mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	generate_one(generate_one)
+	pick_best(pick_best)
+	reflect(reflect)
+	generate(generate)
+	test(test)
+	__end__([<p>__end__</p>]):::last
+	__start__ -.-> generate_one;
+	generate --> test;
+	generate_one --> pick_best;
+	pick_best -.-> __end__;
+	pick_best -.-> reflect;
+	reflect --> generate;
+	test -.-> __end__;
+	test -.-> reflect;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+

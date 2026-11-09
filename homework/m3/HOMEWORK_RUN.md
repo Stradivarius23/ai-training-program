@@ -91,6 +91,37 @@ The pack had no `stretch_supervisor_fixed.py`, so Task 6 builds on
 - Streaming: replace `graph.invoke(...)` with
   `for u in graph.stream(inputs, cfg, stream_mode="updates"): print(u)`.
 
+## About the console outputs: no API key
+
+I did not have an LLM API key in the environment where I did this homework, so
+the outputs in `outputs/` are not a real run against the workshop model
+(`MODEL` in `.env`). Every output file says this in its header.
+
+How the runs were made:
+
+- The task files are the real homework code, run unchanged.
+- Only `common.get_llm()` was swapped. `offline/relay_llm.py` writes every LLM call
+  (the real prompt, the bound tools, the structured-output schema) to a file. Claude,
+  in the coding session, answered each call from the actual prompt.
+- The human answers at `interrupt()` pauses went through the same relay.
+- Everything that is not the model ran for real: the tests on generated code,
+  conditional edges, `Send` fan-out and reducers, SQLite checkpoints, time travel,
+  `interrupt()` and resume, and the budget and escalation guards.
+
+So the logs show how each graph is meant to work and that its wiring does what
+the task asks. They do not show how the workshop model itself (for example
+`groq:openai/gpt-oss-120b`) would behave on these prompts. I understand how the
+graphs should work and how they actually ran. The same commands above produce
+real logs as soon as a key is in `.env`:
+
+```sh
+python offline/run_relay.py task2      # relay model (no key needed, someone answers each call)
+python homework/task2.py               # workshop model from .env
+```
+
+Files: `outputs/task1.txt` … `task6.txt`, `homework/notes/kafka-summary.md` (written
+by the Task 4 run after approval), and `offline/` (relay adapter and runner).
+
 ## Hand-in notes (fill in after your runs)
 
 For each task, 2–3 sentences: what surprised you, and where the model needed a guard in code.
