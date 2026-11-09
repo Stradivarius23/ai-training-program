@@ -101,12 +101,12 @@ def say(graph, text: str, thread_id: str) -> str:
     return reply
 
 
-def main() -> None:
+def main(argv=None) -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("message", nargs="?", default="What's my name?")
     parser.add_argument("--thread", default="1", help="thread_id (default: 1)")
     parser.add_argument("--mermaid", action="store_true")
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
 
     # check_same_thread=False: LangGraph may touch the connection from worker threads
     conn = sqlite3.connect(DB_PATH, check_same_thread=False)

@@ -1,0 +1,79 @@
+════════════════════════════════════════════════════════════════════════════
+OFFLINE RUN: no API key was available, so this is not a run against the
+workshop model (MODEL in .env).
+- The graph code is the real homework code, unchanged.
+- Only common.get_llm() was replaced by offline/relay_llm.py. Every LLM call
+  (prompt, tools, structured-output schema) was relayed to Claude in the coding
+  session, and Claude wrote each model answer from the real prompt.
+- Human answers at interrupt() pauses were also typed through the relay.
+- Tests, routing, reducers, checkpoints and interrupts ran for real.
+- It does not show how the workshop model itself behaves on these prompts.
+════════════════════════════════════════════════════════════════════════════
+
+
+$ python homework/task4.py "What notes do I have about Kafka?"
+
+USER: What notes do I have about Kafka?
+[agent] calls: list_notes(kafka)
+[tool] list_notes: kafka-basics.md — Kafka basics | kafka-consumer-groups.md — Kafka consumer groups | kafka-exactly-once.md — Kafka exactly-on
+AI: You have three notes about Kafka:
+- kafka-basics.md - Kafka basics
+- kafka-consumer-groups.md - Kafka consumer groups
+- kafka-exactly-once.md - Kafka exactly-once
+
+Want me to summarise any of them?
+
+$ python homework/task4.py "Add a summary of all Kafka notes to kafka-summary.md"
+
+USER: Add a summary of all Kafka notes to kafka-summary.md
+[agent] calls: list_notes(kafka)
+[tool] list_notes: kafka-basics.md — Kafka basics | kafka-consumer-groups.md — Kafka consumer groups | kafka-exactly-once.md — Kafka exactly-on
+[agent] calls: read_note(kafka-basics.md), read_note(kafka-consumer-groups.md), read_note(kafka-exactly-once.md)
+[tool] read_note: # Kafka basics |  | - A topic is split into partitions; order is guaranteed only inside one partition. | - The record key pick
+[tool] read_note: # Kafka consumer groups |  | - Each partition is read by at most one consumer in a group; extra consumers stay idle. | - Offse
+[tool] read_note: # Kafka exactly-once |  | - Idempotent producer (`enable.idempotence=true`) removes duplicates from retries. | - Transactions 
+[agent] calls: write_note(kafka-summary.md)
+⏸  Write these notes? (yes / what to change)
+    → kafka-summary.md
+    ──────────────────────────────────────────────────
+    # Kafka summary
+    
+    Summary of kafka-basics.md, kafka-consumer-groups.md and kafka-exactly-once.md.
+    
+    ## Basics
+    - Topics are split into partitions; ordering is guaranteed only within a partition.
+    - The record key decides the partition, so all events for one key stay in order.
+    - Retention is by time or size, not by consumption, so consumers can re-read data.
+    - Replication factor 3 + `min.insync.replicas=2` + `acks=all` survives one broker loss without data loss.
+    
+    ## Consumer groups
+    - One consumer per partition within a group; extra consumers stay idle.
+    - Offsets are committed per group and partition in `__consumer_offsets`.
+    - Rebalances happen when a consumer joins, leaves or exceeds `max.poll.interval.ms`; cooperative sticky assignment avoids stop-the-world rebalances.
+    - Lag = log end offset - committed offset; alert when it keeps growing.
+    
+    ## Exactly-once
+    - The idempotent producer (`enable.idempotence=true`) removes duplicates from retries.
+    - Transactions span partitions and commit consumer offsets atomically.
+    - Consumers need `isolation.level=read_committed` to skip aborted records.
+    - Exactly-once ends at Kafka: external side effects still need idempotent handlers.
+    ──────────────────────────────────────────────────
+    your answer > Too long. Keep it to the 5 most important points as single-line bullets, and end with a 'Sources:' line listing the three notes.
+[tool] write_note: The human rejected this write: Too long. Keep it to the 5 most important points as single-line bullets, and end with a '
+[agent] calls: write_note(kafka-summary.md)
+⏸  Write these notes? (yes / what to change)
+    → kafka-summary.md
+    ──────────────────────────────────────────────────
+    # Kafka summary
+    
+    - Order is guaranteed only within a partition; the record key picks the partition.
+    - Replication factor 3 + `min.insync.replicas=2` + `acks=all` survives one broker loss.
+    - In a group each partition has one consumer; offsets live in `__consumer_offsets`.
+    - Alert on consumer lag that keeps growing; prefer cooperative sticky rebalancing.
+    - Exactly-once = idempotent producer + transactions + `read_committed`, and it ends at Kafka.
+    
+    Sources: kafka-basics.md, kafka-consumer-groups.md, kafka-exactly-once.md
+    ──────────────────────────────────────────────────
+    your answer > yes
+[tool] write_note: Wrote 524 characters to kafka-summary.md.
+AI: Done - kafka-summary.md now holds a 5-point summary of your three Kafka notes, with a Sources line at the end.
