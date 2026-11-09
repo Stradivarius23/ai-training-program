@@ -97,6 +97,13 @@ I did not have an LLM API key in the environment where I did this homework, so
 the outputs in `outputs/` are not a real run against the workshop model
 (`MODEL` in `.env`). Every output file says this in its header.
 
+I could not create an API key: signing up with my work email was blocked by the
+company account with this message:
+
+> Parent Organization "Intellias_Team_Claude_account" is blocking new organization
+> creation for domain intellias.com. Please contact your IT administrator if this
+> setting needs changing.
+
 How the runs were made:
 
 - The task files are the real homework code, run unchanged.
