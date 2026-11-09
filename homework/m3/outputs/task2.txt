@@ -1,0 +1,80 @@
+════════════════════════════════════════════════════════════════════════════
+OFFLINE RUN: no API key was available, so this is not a run against the
+workshop model (MODEL in .env).
+- The graph code is the real homework code, unchanged.
+- Only common.get_llm() was replaced by offline/relay_llm.py. Every LLM call
+  (prompt, tools, structured-output schema) was relayed to Claude in the coding
+  session, and Claude wrote each model answer from the real prompt.
+- Human answers at interrupt() pauses were also typed through the relay.
+- Tests, routing, reducers, checkpoints and interrupts ran for real.
+- It does not show how the workshop model itself behaves on these prompts.
+════════════════════════════════════════════════════════════════════════════
+
+
+$ python homework/task2.py
+
+🛠  generate (attempt 1): Find every number-unit pair with a regex and add up the seconds for each unit.
+❌ test: ValueError: invalid duration: ' 1H 30M '
+🤔 reflect: - The regex only matches lowercase units, so ' 1H 30M ' yields no parts and the function raises ValueError; the test expects case and whitespace to be ignored.
+- Fix: normalise first - remove all whit
+
+🛠  generate (attempt 2): Strip all whitespace and lowercase the input, then validate the whole string with re.fullmatch on optional h, m and s groups.
+✅ test: all tests passed
+🔍 reviewer: changes requested ✏️ (1/2) — Rule 1 fails: the function has no docstring. Add a docstring that describes the accepted format (optional h, m, s parts in that order, e.g. '1h30m', '45s'; whitespace and letter case are ignored) and 
+
+🛠  generate (attempt 3): Same parser, now with the docstring the reviewer asked for, describing the format and the ValueError cases.
+✅ test: all tests passed
+🔍 reviewer: approved ✅ — All rules hold: the docstring documents the format and every ValueError case, s and the return value are type-hinted, and the parser validates the whole string with no special cases.
+
+Result: code accepted ✅, attempts: 3
+────────────────────────────────────────────────────────────
+import re
+
+def parse_duration(s: str) -> int:
+    """Convert a duration such as '1h30m', '45s' or '2h' into seconds.
+
+    Accepts optional hour, minute and second parts in that order (h, m, s);
+    whitespace and letter case are ignored, and values may exceed 59.
+
+    Raises:
+        ValueError: if the string is empty, has a number without a unit,
+            uses an unknown unit or has the parts in the wrong order.
+    """
+    t = "".join(s.split()).lower()
+    m = re.fullmatch(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?", t)
+    if not t or not m:
+        raise ValueError(f"invalid duration: {s!r}")
+    h, mi, sec = (int(g) if g else 0 for g in m.groups())
+    return h * 3600 + mi * 60 + sec
+
+────────────────────────────────────────────────────────────
+
+$ python homework/task2.py --mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	generate(generate)
+	test(test)
+	reflect(reflect)
+	reviewer(reviewer)
+	human_review(human_review)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> generate;
+	generate --> test;
+	human_review -.-> __end__;
+	human_review -.-> generate;
+	reflect --> generate;
+	reviewer -.-> __end__;
+	reviewer -.-> generate;
+	reviewer -.-> human_review;
+	test -.-> __end__;
+	test -.-> reflect;
+	test -.-> reviewer;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+

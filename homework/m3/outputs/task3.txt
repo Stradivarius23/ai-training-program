@@ -1,0 +1,124 @@
+════════════════════════════════════════════════════════════════════════════
+OFFLINE RUN: no API key was available, so this is not a run against the
+workshop model (MODEL in .env).
+- The graph code is the real homework code, unchanged.
+- Only common.get_llm() was replaced by offline/relay_llm.py. Every LLM call
+  (prompt, tools, structured-output schema) was relayed to Claude in the coding
+  session, and Claude wrote each model answer from the real prompt.
+- Human answers at interrupt() pauses were also typed through the relay.
+- Tests, routing, reducers, checkpoints and interrupts ran for real.
+- It does not show how the workshop model itself behaves on these prompts.
+════════════════════════════════════════════════════════════════════════════
+
+
+$ python homework/task3.py run
+
+🛠  generate (attempt 1): Match each number followed by h, m or s with a regex and sum the seconds per unit.
+❌ test: ValueError: invalid duration: ' 1H 30M '
+🤔 reflect: - Units are matched case-sensitively, so 'H' and 'M' in ' 1H 30M ' are not found and the function raises ValueError instead of returning 5400.
+- Lowercase the input and drop all whitespace before pars
+
+🛠  generate (attempt 2): Normalise to lowercase without whitespace, then require the whole string to match optional h, m, s groups with re.fullmatch.
+✅ test: all tests passed
+🔍 reviewer: changes requested ✏️ (1/2) — Missing docstring (rule 1). Add one that explains the accepted format - optional hours, minutes, seconds in h-m-s order, case and whitespace ignored - and lists when ValueError is raised: empty input,
+
+🛠  generate (attempt 3): Added the requested docstring; the parsing logic is unchanged.
+✅ test: all tests passed
+🔍 reviewer: approved ✅ — Approved: the docstring covers the format and the ValueError cases, the signature is fully typed, and the whole-string fullmatch has no special cases.
+
+Result: code accepted ✅, attempts: 3
+────────────────────────────────────────────────────────────
+import re
+
+def parse_duration(s: str) -> int:
+    """Return the number of seconds in a duration string like '1h30m', '45s' or '2h'.
+
+    Format: optional hours, minutes and seconds in h-m-s order; case and
+    whitespace are ignored. Raises ValueError for empty input, a bare number,
+    an unknown unit or parts out of order.
+    """
+    t = re.sub(r"\s+", "", s).lower()
+    m = re.fullmatch(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?", t)
+    if not t or m is None:
+        raise ValueError(f"invalid duration: {s!r}")
+    h, mi, sec = (int(x or 0) for x in m.groups())
+    return h * 3600 + mi * 60 + sec
+
+────────────────────────────────────────────────────────────
+
+generate calls in this run: 3
+
+$ python homework/task3.py replay
+step  next            attempts  error  checkpoint
+  -1  ('__start__',)         -  no     5b275f69
+   0  ('generate',)          0  no     90313978
+   1  ('test',)              1  no     c15bff19
+   2  ('reflect',)           1  yes    e460b8d6
+   3  ('generate',)          1  yes    56d36e1f
+   4  ('test',)              2  yes    2d7182bd
+   5  ('reviewer',)          2  no     bb991602
+   6  ('generate',)          2  no     d40bc7b9
+   7  ('test',)              3  no     1e0b615c
+   8  ('reviewer',)          3  no     4b1da17b
+   9  (end)                  3  no     a43b76c3
+total checkpoints: 11
+
+⏪ fork from step 2 (attempts=1, next=('reflect',)), checkpoint …e460b8d6
+   failing test: ValueError: invalid duration: ' 1H 30M '
+   + feedback: 'Use a regular expression with re.fullmatch'
+🤔 reflect: - The unit regex is case-sensitive, so ' 1H 30M ' produces no matches and ValueError is raised.
+- Normalise the input (remove whitespace, lowercase) before matching.
+- Validate the full string, not ju
+
+🛠  generate (attempt 2): Lowercase and strip whitespace, then parse with re.fullmatch over optional h, m and s groups as the injected feedback asks.
+✅ test: all tests passed
+🔍 reviewer: changes requested ✏️ (1/2) — Rule 1: there is no docstring. Document the accepted format (optional h, m, s parts in that order; whitespace and case ignored) and the ValueError cases (empty string, number without unit, unknown uni
+
+🛠  generate (attempt 3): Added the docstring the reviewer asked for; logic unchanged.
+✅ test: all tests passed
+🔍 reviewer: approved ✅ — All three rules hold: documented format and errors, full type hints, general fullmatch-based parsing.
+
+Result: code accepted ✅, attempts: 3
+────────────────────────────────────────────────────────────
+import re
+
+def parse_duration(s: str) -> int:
+    """Convert a duration string such as '1h30m', '45s' or '2h' to seconds.
+
+    Optional h, m and s parts must appear in that order; whitespace and case
+    are ignored. Raises ValueError for an empty string, a number without a
+    unit, an unknown unit or parts in the wrong order.
+    """
+    t = "".join(s.split()).lower()
+    m = re.fullmatch(r"(?:(\d+)h)?(?:(\d+)m)?(?:(\d+)s)?", t)
+    if not t or not m:
+        raise ValueError(f"invalid duration: {s!r}")
+    h, mi, sec = (int(g or 0) for g in m.groups())
+    return h * 3600 + mi * 60 + sec
+
+────────────────────────────────────────────────────────────
+
+generate calls during the replay: 2 (attempt numbers continue from 1: earlier steps were not re-run)
+
+History after the replay (the fork is a new branch from the chosen checkpoint):
+step  next            attempts  error  checkpoint
+  -1  ('__start__',)         -  no     5b275f69
+   0  ('generate',)          0  no     90313978
+   1  ('test',)              1  no     c15bff19
+   2  ('reflect',)           1  yes    e460b8d6
+   3  ('generate',)          1  yes    56d36e1f
+   4  ('test',)              2  yes    2d7182bd
+   5  ('reviewer',)          2  no     bb991602
+   6  ('generate',)          2  no     d40bc7b9
+   7  ('test',)              3  no     1e0b615c
+   8  ('reviewer',)          3  no     4b1da17b
+   9  (end)                  3  no     a43b76c3
+   3  ('reflect',)           1  yes    a1b619e5
+   4  ('generate',)          1  yes    d986bb84
+   5  ('test',)              2  yes    1804d4af
+   6  ('reviewer',)          2  no     5202c7a7
+   7  ('generate',)          2  no     8f745647
+   8  ('test',)              3  no     2b44e1ec
+   9  ('reviewer',)          3  no     b6135277
+  10  (end)                  3  no     c365ffe0
+total checkpoints: 19

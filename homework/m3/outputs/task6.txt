@@ -1,0 +1,255 @@
+════════════════════════════════════════════════════════════════════════════
+OFFLINE RUN: no API key was available, so this is not a run against the
+workshop model (MODEL in .env).
+- The graph code is the real homework code, unchanged.
+- Only common.get_llm() was replaced by offline/relay_llm.py. Every LLM call
+  (prompt, tools, structured-output schema) was relayed to Claude in the coding
+  session, and Claude wrote each model answer from the real prompt.
+- Human answers at interrupt() pauses were also typed through the relay.
+- Tests, routing, reducers, checkpoints and interrupts ran for real.
+- It does not show how the workshop model itself behaves on these prompts.
+════════════════════════════════════════════════════════════════════════════
+
+
+$ python homework/task6.py --task terraform --strict
+TASK: Write a Python function tf_name(project: str, env: str, component: str, index: int | None = None) -> str
+that builds a cloud resource name by our Terraform naming convention:
+- format <project>-<env>-<component>, plus -<NN> when index is given; all lowercase;
+- env is one of dev, stg, prd; the aliases development, staging, production map to them; anything else → ValueError;
+- in project and component every character outside [a-z0-9] is a separator; separators become single hyphens,
+  no leading or trailing hyphens; empty after cleaning → ValueError;
+- index must be 1..99 and is always written with two digits (7 → 07), otherwise ValueError;
+- the full name is at most 32 characters: shorten only the component, cutting at the last hyphen that fits
+  (hard cut if there is none); if it still does not fit → ValueError.
+Example from the platform team's wiki — include it in the tests as is:
+  tf_name('Payments API', 'production', 'Blob Storage', 3) == 'payments-api-prd-blob-storage-3'
+BUDGET: 30 LLM calls · escalation after 3 rejections · strict=True
+
+🧭 supervisor → planner: Nothing exists yet, so the planner must write the spec and tests first.
+📝 planner: spec ready, 8 tests
+
+🧭 supervisor → coder: Spec and tests are ready; the coder writes the first version.
+🛠  coder: Implemented the naming rules; note the wiki example expects '-3' while the rules require two digits ('-03'), so that test will fail unless the test is corrected.
+
+🧭 supervisor → tester: Code exists but has not been tested yet.
+🧪 tester: ❌ AssertionError
+
+🧭 supervisor → coder: Tests failed on the first version; the coder should fix it before anything else.
+🛠  coder: No change: the only failing assert is the wiki example, which expects '-3' although the rules require two digits ('-03'); making it pass would break the rule or special-case the input, so the test needs correcting.
+
+🧭 supervisor → tester: The coder submitted a new version; it has not been tested yet.
+🧪 tester: ❌ AssertionError
+
+🧭 supervisor → planner: The same AssertionError remains after two coder attempts, so a test is probably wrong; the planner should check the tests.
+📝 planner: spec ready, 8 tests
+
+🧭 supervisor → tester: The planner revised the tests; run them against the current code.
+🧪 tester: ✅ all tests passed
+
+🧭 supervisor → reviewer: Tests pass; the reviewer has not looked at the code yet.
+🔍 reviewer: changes requested ✏️ (1 in a row) — Logic matches the spec, but the house rule is not met: tf_name has no docstring. Add one that lists the format, the env aliases, the cleaning rule, the two-digi
+
+🧭 supervisor → coder: The reviewer requested a docstring; the coder must address it.
+🛠  coder: Kept the code unchanged: my instructions say no docstring, which conflicts with the reviewer asking for one; the logic already matches the spec.
+
+🧭 supervisor → tester: The coder submitted a new version that has not been tested.
+🧪 tester: ✅ all tests passed
+
+🧭 supervisor → reviewer: Tests pass on the new version; it needs review.
+🔍 reviewer: changes requested ✏️ (2 in a row) — Still no docstring, so the house rule fails again. The logic is correct; add a docstring that lists the naming rules and every ValueError case (unknown env, emp
+
+🧭 supervisor → coder: The reviewer again asks for a docstring; send it back to the coder.
+🛠  coder: Code unchanged again: the reviewer wants a docstring but my instructions explicitly forbid one; this needs a decision from the lead.
+
+🧭 supervisor → tester: New code submitted; run the tests before review.
+🧪 tester: ✅ all tests passed
+
+🧭 supervisor → reviewer: Tests pass; the new version needs review.
+🔍 reviewer: changes requested ✏️ (3 in a row) — Third time without a docstring: the house rule still fails. The implementation is correct and the tests pass; only the docstring (rules + ValueError cases) is m
+
+────────────────────────────────────────────────────────────
+⏸  The reviewer requested changes 3 times in a row.
+Last review: Third time without a docstring: the house rule still fails. The implementation is correct and the tests pass; only the docstring (rules + ValueError cases) is missing.
+────────────────────────────────────────────────────────────
+import re
+
+ENVS = {"dev": "dev", "stg": "stg", "prd": "prd", "development": "dev", "staging": "stg", "production": "prd"}
+
+
+def tf_name(project: str, env: str, component: str, index: int | None = None) -> str:
+    e = ENVS.get(env.strip().lower())
+    if e is None:
+        raise ValueError(f"unknown env: {env!r}")
+
+    def clean(part: str) -> str:
+        c = re.sub(r"[^a-z0-9]+", "-", part.lower()).strip("-")
+        if not c:
+            raise ValueError(f"empty name part: {part!r}")
+        return c
+
+    p, c = clean(project), clean(component)
+    suffix = ""
+    if index is not None:
+        if not 1 <= index <= 99:
+            raise ValueError(f"index out of range: {index}")
+        suffix = f"-{index:02d}"
+    room = 32 - len(f"{p}-{e}-") - len(suffix)
+    if room < 1:
+        raise ValueError("name cannot fit in 32 characters")
+    if len(c) > room:
+        cut = c.rfind("-", 0, room + 1)
+        c = c[:cut] if cut > 0 else c[:room]
+    return f"{p}-{e}-{c}{suffix}"
+
+────────────────────────────────────────────────────────────
+continue / finish / or type instructions for the coder > The house rule wins: add the docstring the reviewer asks for (rules + every ValueError case). Keep the logic exactly as it is.
+👤 human → coder: The house rule wins: add the docstring the reviewer asks for (rules + every ValueError case). Keep the logic exactly as it is.
+🛠  coder: Added the docstring per the lead decision; logic unchanged.
+
+🧭 supervisor → tester: The coder added the docstring; re-run the tests on the new version.
+🧪 tester: ✅ all tests passed
+
+🧭 supervisor → reviewer: Tests pass with the docstring added; it needs review.
+🔍 reviewer: approved ✅ — Approved: the docstring now lists all naming rules and ValueError cases, and the logic matches the spec with no special-casing.
+
+🧭 supervisor → FINISH: Tests pass and the reviewer approved the current code.
+
+════════════════════════════════════════════════════════════
+Route (supervisor decides between every step, 🛡 = corrected by the guard, 👤 = human):
+  planner → coder → tester → coder → tester → planner → tester → reviewer → coder → tester → reviewer → coder → tester → reviewer → coder👤 → tester → reviewer → FINISH
+Result: done ✅ (tests passed, review approved)
+
+agent        LLM calls
+supervisor          17
+planner              2
+coder                5
+reviewer             4
+total               28   (budget 30)
+────────────────────────────────────────────────────────────
+import re
+
+ENVS = {"dev": "dev", "stg": "stg", "prd": "prd", "development": "dev", "staging": "stg", "production": "prd"}
+
+
+def tf_name(project: str, env: str, component: str, index: int | None = None) -> str:
+    """Build a cloud resource name: <project>-<env>-<component>[-<NN>], all lowercase.
+
+    env is dev, stg or prd (aliases development, staging, production). In project and
+    component every run of characters outside [a-z0-9] becomes one hyphen, trimmed at
+    both ends. index is 1..99, written with two digits. Names are at most 32 characters:
+    only the component is shortened, at the last hyphen that fits, else hard cut.
+
+    Raises:
+        ValueError: unknown env, empty project or component after cleaning,
+            index outside 1..99, or a name that cannot fit in 32 characters.
+    """
+    e = ENVS.get(env.strip().lower())
+    if e is None:
+        raise ValueError(f"unknown env: {env!r}")
+
+    def clean(part: str) -> str:
+        c = re.sub(r"[^a-z0-9]+", "-", part.lower()).strip("-")
+        if not c:
+            raise ValueError(f"empty name part: {part!r}")
+        return c
+
+    p, c = clean(project), clean(component)
+    suffix = ""
+    if index is not None:
+        if not 1 <= index <= 99:
+            raise ValueError(f"index out of range: {index}")
+        suffix = f"-{index:02d}"
+    room = 32 - len(f"{p}-{e}-") - len(suffix)
+    if room < 1:
+        raise ValueError("name cannot fit in 32 characters")
+    if len(c) > room:
+        cut = c.rfind("-", 0, room + 1)
+        c = c[:cut] if cut > 0 else c[:room]
+    return f"{p}-{e}-{c}{suffix}"
+
+────────────────────────────────────────────────────────────
+
+$ python homework/task6.py --budget 10
+TASK: Write a Python function slugify(title: str, max_len: int = 40) -> str that turns an article
+title into a URL slug:
+- lowercase; accented letters become plain ones (é → e); any other non [a-z0-9] characters are separators;
+- words are joined by single hyphens, no leading or trailing hyphens;
+- if the slug is longer than max_len, cut it at the last hyphen that keeps it within max_len
+  (if there is no such hyphen, hard-cut at max_len).
+Example from the product manager's ticket — include it in the tests as is:
+  slugify('Hello, World!', max_len=8) == 'hello-wo'
+BUDGET: 10 LLM calls · escalation after 3 rejections · strict=False
+
+🧭 supervisor → planner: No spec or tests yet; the planner goes first.
+📝 planner: spec ready, 7 tests
+
+🧭 supervisor → coder: Spec and tests exist; the coder writes the function.
+🛠  coder: Implemented the rules; the PM example 'hello-wo' contradicts the cut-at-last-hyphen rule (it gives 'hello'), so that test will fail.
+
+🧭 supervisor → tester: Code is written but not yet tested.
+🧪 tester: ❌ AssertionError
+
+🧭 supervisor → coder: Tests failed; the coder should fix the code.
+🛠  coder: No change: only the PM example fails, and 'hello-wo' contradicts the rule (cut at the last hyphen gives 'hello'); the test should be fixed, not the code.
+
+🧭 supervisor → tester: New version from the coder; run the tests.
+🧪 tester: ❌ AssertionError
+
+🧭 supervisor → planner: The same AssertionError persists after two coder attempts; the test itself is likely wrong.
+📝 planner: spec ready, 7 tests
+💸 budget guard: LLM budget: 10 of 10 calls used, the next step could go over — stopping
+
+════════════════════════════════════════════════════════════
+Route (supervisor decides between every step, 🛡 = corrected by the guard, 👤 = human):
+  planner → coder → tester → coder → tester → planner → BUDGET
+Result: stopped before done ❌ — LLM budget: 10 of 10 calls used, the next step could go over
+
+agent        LLM calls
+supervisor           6
+planner              2
+coder                2
+reviewer             0
+total               10   (budget 10)
+────────────────────────────────────────────────────────────
+import re
+import unicodedata
+
+
+def slugify(title: str, max_len: int = 40) -> str:
+    ascii_title = unicodedata.normalize("NFKD", title).encode("ascii", "ignore").decode()
+    slug = re.sub(r"[^a-z0-9]+", "-", ascii_title.lower()).strip("-")
+    if len(slug) <= max_len:
+        return slug
+    cut = slug.rfind("-", 0, max_len + 1)
+    return slug[:cut] if cut > 0 else slug[:max_len]
+
+────────────────────────────────────────────────────────────
+
+$ python homework/task6.py --mermaid
+---
+config:
+  flowchart:
+    curve: linear
+---
+graph TD;
+	__start__([<p>__start__</p>]):::first
+	supervisor(supervisor)
+	planner(planner)
+	coder(coder)
+	tester(tester)
+	reviewer(reviewer)
+	__end__([<p>__end__</p>]):::last
+	__start__ --> supervisor;
+	coder -.-> supervisor;
+	planner -.-> supervisor;
+	reviewer -.-> supervisor;
+	supervisor -.-> __end__;
+	supervisor -.-> coder;
+	supervisor -.-> planner;
+	supervisor -.-> reviewer;
+	supervisor -.-> tester;
+	tester -.-> supervisor;
+	classDef default fill:#f2f0ff,line-height:1.2
+	classDef first fill-opacity:0
+	classDef last fill:#bfb6fc
+

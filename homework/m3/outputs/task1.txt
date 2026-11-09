@@ -1,0 +1,34 @@
+════════════════════════════════════════════════════════════════════════════
+OFFLINE RUN: no API key was available, so this is not a run against the
+workshop model (MODEL in .env).
+- The graph code is the real homework code, unchanged.
+- Only common.get_llm() was replaced by offline/relay_llm.py. Every LLM call
+  (prompt, tools, structured-output schema) was relayed to Claude in the coding
+  session, and Claude wrote each model answer from the real prompt.
+- Human answers at interrupt() pauses were also typed through the relay.
+- Tests, routing, reducers, checkpoints and interrupts ran for real.
+- It does not show how the workshop model itself behaves on these prompts.
+════════════════════════════════════════════════════════════════════════════
+
+
+$ python homework/task1.py "My name is Alex"
+[thread 1] history from memory.db: 0 messages
+[thread 1] USER: My name is Alex
+[thread 1] AI: Nice to meet you, Alex! How can I help you today?
+
+$ python homework/task1.py "What's my name?"
+[thread 1] history from memory.db: 2 messages
+[thread 1] USER: What's my name?
+[thread 1] AI: Your name is Alex.
+
+$ python homework/task1.py "What's my name?" --thread 2
+[thread 2] history from memory.db: 0 messages
+[thread 2] USER: What's my name?
+[thread 2] AI: I don't know your name yet - you haven't told me in this conversation. What should I call you?
+
+$ rm homework/memory.db
+
+$ python homework/task1.py "What's my name?"
+[thread 1] history from memory.db: 0 messages
+[thread 1] USER: What's my name?
+[thread 1] AI: I don't know your name - you haven't told me yet. What should I call you?
